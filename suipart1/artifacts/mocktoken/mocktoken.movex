@@ -1,0 +1,42 @@
+module suipart1::mocktoken;
+
+use sui::coin::{Self, TreasuryCap};
+use sui::coin_registry;
+
+// The type identifier of coin. The coin will have a type
+// tag of kind: `Coin<package_object::mycoin::MYCOIN>`
+// Make sure that the name of the type matches the module's name.
+public struct MOCKTOKEN has drop {}
+
+// Module initializer is called once on module publish. A `TreasuryCap` is sent
+// to the publisher, who then controls minting and burning. `MetadataCap` is also
+// sent to the Publisher.
+fun init(witness: MOCKTOKEN, ctx: &mut TxContext) {
+    let (builder, treasury_cap) = coin_registry::new_currency_with_otw(
+        witness,
+        6, // Decimals
+        b"SHRN".to_string(), // Symbol
+        b"SAHRONIN".to_string(), // Name
+        b"SAHRONIN Token".to_string(), // Description
+        b"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQlNFwj8SKt06MMQrIJhOCHmOgRYdczilVJsEtG5JGlP8HMD_GLxjDK99YklcEoblxrVCM1B3U7m6gXnL_mB7uw25W1_JSvli4zDgHBcPbJzA&s=10".to_string(), // Icon URL
+        ctx,
+    );
+
+    let metadata_cap = builder.finalize(ctx);
+
+    // Freezing this object makes the metadata immutable, including the title, name, and icon image.
+    // If you want to allow mutability, share it with public_share_object instead.
+    transfer::public_transfer(treasury_cap, ctx.sender());
+    transfer::public_transfer(metadata_cap, ctx.sender());
+}
+
+/// Mint tokens to any address (requires TreasuryCap ownership)
+public fun mint(
+    treasury_cap: &mut TreasuryCap<MOCKTOKEN>,
+    amount: u64,
+    recipient: address,
+    ctx: &mut TxContext,
+) {
+    let coin = coin::mint(treasury_cap, amount, ctx);
+    transfer::public_transfer(coin, recipient);
+}
